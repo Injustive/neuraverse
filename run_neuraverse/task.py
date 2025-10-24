@@ -5,7 +5,7 @@ from utils.utils import (retry, check_res_status, get_utc_now,
                          get_utc_now, approve_asset, asset_balance, get_decimals, approve_if_insufficient_allowance,
                          generate_random, retry_js, JSException, ModernTask, get_session, get_gas_params, estimate_gas)
 from utils.galxe_utils.captcha import CapmonsterSolver
-from .config import CAPTCHA_API_KEY
+from .config import CAPTCHA_API_KEY, SLEEP_FROM_TO
 import random
 from decimal import Decimal, getcontext
 from .paths import ANKR_ROUTER_ABI
