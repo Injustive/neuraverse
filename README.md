@@ -1,13 +1,3 @@
-cd "path_to_the_project"
+Soft for neuraverse.neuraprotocol.io/
 
-python -m venv venv
-
-cd venv/scripts
-
-activate
-
-cd ../..
-
-pip install -r requirements.txt
-
-python main.py
+Tg - https://t.me/code_and_coin
