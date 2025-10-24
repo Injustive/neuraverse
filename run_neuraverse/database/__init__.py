@@ -1,0 +1,1 @@
+from .models import NeuraverseBaseModel as base_project_model
