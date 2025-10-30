@@ -1,3 +1,5 @@
+import json
+
 from utils.client import Client
 from utils.utils import (retry, check_res_status, get_utc_now,
                          get_data_lines, sleep, Logger,
@@ -272,13 +274,55 @@ class Task(Logger, ModernTask):
     @retry()
     @check_res_status(expected_statuses=[200, 201, 403])
     async def faucet_request(self):
-        url = 'https://neuraverse.neuraprotocol.io/api/faucet'
-        json_data = {
-            'address': self.client.address,
-            'userLoggedIn': True,
-            'chainId': 267,
+        url = 'https://neuraverse.neuraprotocol.io/?section=faucet'
+        headers = {
+            'accept': 'text/x-component',
+            'accept-language': 'uk-UA,uk;q=0.9,ru;q=0.8,en-US;q=0.7,en;q=0.6',
+            'cache-control': 'no-cache',
+            'content-type': 'text/plain;charset=UTF-8',
+            'next-action': '78130822de5f350cebad7a4703c1f7b5c7d7279a95',
+            'next-router-state-tree': '%5B%22%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D',
+            'origin': 'https://neuraverse.neuraprotocol.io',
+            'pragma': 'no-cache',
+            'priority': 'u=1, i',
+            'referer': 'https://neuraverse.neuraprotocol.io/?section=faucet',
+            'sec-ch-ua': '"Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"macOS"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-origin',
+            'user-agent': self.session.headers['User-Agent']
         }
-        return await self.session.post(url, json=json_data)
+        data = f'["{self.client.address}",267,"{self.session.headers["Authorization"].split("Bearer ")[-1]}",true]'
+        return await self.session.post(url, data=data, headers=headers)
+
+    @retry()
+    @check_res_status()
+    async def faucet_event(self):
+        url = 'https://neuraverse-testnet.infra.neuraprotocol.io/api/events'
+        headers = {
+            'accept': 'application/json, text/plain, */*',
+            'accept-language': 'uk-UA,uk;q=0.9,ru;q=0.8,en-US;q=0.7,en;q=0.6',
+            'authorization': self.session.headers['Authorization'],
+            'cache-control': 'no-cache',
+            'content-type': 'application/json',
+            'origin': 'https://neuraverse.neuraprotocol.io',
+            'pragma': 'no-cache',
+            'priority': 'u=1, i',
+            'referer': 'https://neuraverse.neuraprotocol.io/',
+            'sec-ch-ua': '"Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"macOS"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-site',
+            'user-agent': self.session.headers['User-Agent']
+        }
+        json_data = {
+            'type': 'faucet:claimTokens'
+        }
+        return await self.session.post(url, json=json_data, headers=headers)
 
     async def faucet(self):
         neura_points = (await self.account()).json()['neuraPoints']
@@ -286,15 +330,16 @@ class Task(Logger, ModernTask):
             self.logger.error(f"You need to have more than 50 points in your account to faucet. "
                               f"You have only {neura_points} points.")
             return
-        faucet_response = (await self.faucet_request()).json()
-        if faucet_response.get('status') == 'success':
+        faucet_response = await self.faucet_request()
+        await self.faucet_event()
+        if 'ANKR distribution successful' in faucet_response.text:
             self.logger.success("Successfully faucet!")
-        elif 'Address has already received' in str(faucet_response):
+        elif 'Address has already received' in faucet_response.text:
             self.logger.info(f"You have already received tANKR today!")
-        elif 'This address is not allowed to receive tokens' in str(faucet_response):
+        elif 'This address is not allowed to receive tokens' in faucet_response.text:
             self.logger.error(f"This address is not allowed to receive tokens")
         else:
-            self.logger.error(f"Faucet error: {faucet_response}")
+            self.logger.error(f"Faucet error: {faucet_response.text}")
 
     getcontext().prec = 60
 
