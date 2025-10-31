@@ -280,7 +280,7 @@ class Task(Logger, ModernTask):
             'accept-language': 'uk-UA,uk;q=0.9,ru;q=0.8,en-US;q=0.7,en;q=0.6',
             'cache-control': 'no-cache',
             'content-type': 'text/plain;charset=UTF-8',
-            'next-action': '78130822de5f350cebad7a4703c1f7b5c7d7279a95',
+            'next-action': '786819c32337a1f26ae4700678ee701f0873fee6c4',
             'next-router-state-tree': '%5B%22%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D',
             'origin': 'https://neuraverse.neuraprotocol.io',
             'pragma': 'no-cache',
