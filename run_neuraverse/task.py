@@ -271,8 +271,6 @@ class Task(Logger, ModernTask):
         url = 'https://neuraverse-testnet.infra.neuraprotocol.io/api/account'
         return await self.session.get(url)
 
-    @retry()
-    @check_res_status(expected_statuses=[200, 201, 403])
     async def faucet_request(self):
         url = 'https://neuraverse.neuraprotocol.io/?section=faucet'
         headers = {
@@ -280,7 +278,7 @@ class Task(Logger, ModernTask):
             'accept-language': 'uk-UA,uk;q=0.9,ru;q=0.8,en-US;q=0.7,en;q=0.6',
             'cache-control': 'no-cache',
             'content-type': 'text/plain;charset=UTF-8',
-            'next-action': '78459a487b08c86189d6e3cab0b36d8f76eb2b632a',
+            'next-action': '78d30d59c8b72e2764652e54a911a68b75852982b3',
             'next-router-state-tree': '%5B%22%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D',
             'origin': 'https://neuraverse.neuraprotocol.io',
             'pragma': 'no-cache',
@@ -330,7 +328,11 @@ class Task(Logger, ModernTask):
             self.logger.error(f"You need to have more than 50 points in your account to faucet. "
                               f"You have only {neura_points} points.")
             return
-        faucet_response = await self.faucet_request()
+        try:
+            faucet_response = await self.faucet_request()
+        except Exception:
+            self.logger.error(f"Failed to faucet")
+            return
         await self.faucet_event()
         if 'ANKR distribution successful' in faucet_response.text:
             self.logger.success("Successfully faucet!")
@@ -340,15 +342,6 @@ class Task(Logger, ModernTask):
             self.logger.error(f"This address is not allowed to receive tokens")
         else:
             self.logger.error(f"Faucet error: {faucet_response.text}")
-
-    getcontext().prec = 60
-
-    Q96 = Decimal(2) ** 96
-    FEE_DENOM = Decimal(1_000_000)
-
-    SYMBOL_ALIASES = {
-        "ANKR": "WANKR",
-    }
 
     def pick_best_direct_pool(self, data, sym_in, sym_out):
         pools = data["data"]["pools"]
@@ -370,7 +363,6 @@ class Task(Logger, ModernTask):
 
         candidates.sort(key=lambda x: x[0], reverse=True)
         return candidates[0][1], None
-
 
     def v3_amount_out_single_tick(self,
             amount_in_human: Decimal,
